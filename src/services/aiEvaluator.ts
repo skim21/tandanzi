@@ -43,7 +43,6 @@ export function evaluateMeal(
 ): MealRecommendation {
   const now = new Date()
   const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
   const mealTimeName = getMealTimeName(currentHour)
   
   // 어제 섭취한 총 칼로리 계산

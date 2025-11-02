@@ -15,8 +15,6 @@ export interface MedicalAssessment {
 
 // 의학적 기준에 따른 평가
 const DAILY_PROTEIN_GOAL = 50 // g (성인 기준)
-const DAILY_FAT_GOAL = 65 // g (성인 기준, 총 칼로리의 30%)
-const DAILY_CARB_GOAL = 250 // g (성인 기준)
 const DAILY_FIBER_GOAL = 25 // g (성인 기준)
 const DAILY_SUGAR_LIMIT = 50 // g (WHO 권장 기준)
 
@@ -32,14 +30,10 @@ export function getMedicalAssessment(
   
   // 하루 누적 영양소 계산
   const todayProtein = todayMeals.reduce((sum, meal) => sum + meal.nutrition.protein, 0)
-  const todayFat = todayMeals.reduce((sum, meal) => sum + meal.nutrition.fat, 0)
-  const todayCarbs = todayMeals.reduce((sum, meal) => sum + meal.nutrition.carbs, 0)
   const todayFiber = todayMeals.reduce((sum, meal) => sum + meal.nutrition.fiber, 0)
   const todaySugar = todayMeals.reduce((sum, meal) => sum + meal.nutrition.sugar, 0)
   
   const projectedProtein = todayProtein + food.protein
-  const projectedFat = todayFat + food.fat
-  const projectedCarbs = todayCarbs + food.carbs
   const projectedFiber = todayFiber + food.fiber
   const projectedSugar = todaySugar + food.sugar
   
