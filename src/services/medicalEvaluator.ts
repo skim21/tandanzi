@@ -172,7 +172,8 @@ export function getMedicalAssessment(
     longTerm.push('근육량 감소, 면역력 저하, 회복 지연')
     recommendations.push(`단백질 함량이 높은 식품(닭가슴살, 생선, 두부 등)과 함께 섭취하세요`)
   } else if (proteinRatio > 20 && food.calories < 300) {
-    analysis.push(`단백질이 풍부합니다 (${food.protein}g) - 근육 회복과 성장에 도움이 됩니다`)
+    // 단백질이 풍부해도 점수는 그대로 유지 (보너스 없음)
+    analysis.push(`단백질이 풍부합니다 (${food.protein}g)`)
   }
   
   // 섬유질 평가
@@ -200,7 +201,7 @@ export function getMedicalAssessment(
   if (yesterdayCalories > 2400) {
     if (food.calories > 400) {
       score -= 20
-      if (grade === 'A') grade = 'B'
+      grade = 'F'
       analysis.push(`어제 칼로리 섭취가 ${yesterdayCalories.toFixed(0)}kcal로 높았습니다. 오늘은 300kcal 이하의 가벼운 식사를 권장합니다.`)
       recommendations.push('연속된 고칼로리 섭취는 신진대사에 부담을 줍니다')
     }
@@ -257,13 +258,7 @@ export function getMedicalAssessment(
   
   // === 종합 평가 요약 ===
   let summary = ''
-  if (grade === 'A') {
-    summary = `✅ 이 음식은 현재 시간대와 영양소 구성 측면에서 우수합니다. 균형잡힌 영양소로 건강한 식단에 적합합니다.`
-  } else if (grade === 'B') {
-    summary = `⚠️ 이 음식은 대체로 적절하나, 일부 영양소(지방/당분) 함량이 높아 주의가 필요합니다. 적당히 섭취하시기 바랍니다.`
-  } else if (grade === 'C') {
-    summary = `⚠️ 이 음식은 영양소 균형이 다소 부족하거나 칼로리가 높아 주의깊은 섭취가 필요합니다. 자주 섭취하지 않기를 권장합니다.`
-  } else if (grade === 'D') {
+  if (grade === 'D') {
     summary = `❌ 이 음식은 영양소 불균형이나 과도한 칼로리로 건강에 부정적 영향을 줄 수 있습니다. 섭취를 자제하시기 바랍니다.`
   } else {
     summary = `❌ 이 음식은 현재 건강한 식단에 매우 부적합합니다. 고칼로리, 고지방, 고당분, 고나트륨으로 인해 만성 질환 위험을 높일 수 있습니다. 절대 섭취하지 마세요.`

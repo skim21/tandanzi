@@ -261,7 +261,6 @@ export function evaluateMeal(
   
   // 5. 나트륨 평가 추가 (나쁜 영양소 - 대부분 안 좋게)
   const sodium = food.sodium || 0
-  const DAILY_SODIUM_LIMIT = 2000 // mg (WHO 권장 기준)
   
   if (sodium > 800) {
     score -= 30  // 즉시 10점 이하
