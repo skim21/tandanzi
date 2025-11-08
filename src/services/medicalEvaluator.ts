@@ -241,6 +241,66 @@ export function getMedicalAssessment(
     grade = grade === 'F' ? 'F' : 'D'
   }
   
+  // 추가: 패스트푸드/튀김/고당분 음식 특별 체크 (구글/네이버 건강 정보 기준)
+  const foodNameLower = food.foodName.toLowerCase()
+  
+  const fastFoodKeywords = ['치킨', '튀김', '피자', '햄버거', '도넛', '프라이드', '치즈', '버거']
+  const friedFoodKeywords = ['튀김', '프라이', '치킨', '닭강정', '돈까스', '생선까스', '고로케']
+  const highSugarKeywords = ['탕후루', '사탕', '초콜릿', '케이크', '아이스크림', '도넛', '쿠키', '과자', '캔디']
+  const processedFoodKeywords = ['라면', '짜장면', '짬뽕', '마라탕', '부대찌개', '떡볶이']
+  const highSodiumKeywords = ['라면', '짜장', '짬뽕', '마라탕', '김치', '된장']
+  
+  const isFastFood = fastFoodKeywords.some(keyword => foodNameLower.includes(keyword))
+  const isFriedFood = friedFoodKeywords.some(keyword => foodNameLower.includes(keyword))
+  const isHighSugar = highSugarKeywords.some(keyword => foodNameLower.includes(keyword))
+  const isProcessed = processedFoodKeywords.some(keyword => foodNameLower.includes(keyword))
+  const isHighSodium = highSodiumKeywords.some(keyword => foodNameLower.includes(keyword))
+  
+  // 패스트푸드/튀김 음식은 무조건 F 등급
+  if (isFastFood || isFriedFood) {
+    score = 5
+    grade = 'F'
+    analysis.push(`❌ 패스트푸드/튀김 음식은 건강에 매우 해롭습니다. 구글/네이버 건강 정보에 따르면 고지방, 고칼로리로 비만, 심혈관 질환 위험을 높입니다.`)
+    shortTerm.push('소화 지연, 무기력감, 트리글리세리드 급상승')
+    longTerm.push('비만, 제2형 당뇨병, 동맥경화, 심혈관 질환, 뇌졸중 위험 증가')
+    riskFactors.push('고지방 식이', '트랜스지방', '포화지방 과다')
+    recommendations.push('❌ 절대 섭취하지 마세요. 구글/네이버 건강 정보: 튀긴 음식은 트랜스지방과 포화지방이 많아 콜레스테롤 상승과 동맥경화를 유발합니다.')
+  }
+  
+  // 고당분 음식은 무조건 F 등급
+  if (isHighSugar) {
+    score = 8
+    grade = 'F'
+    analysis.push(`❌ 고당분 음식은 건강에 매우 해롭습니다. 구글/네이버 건강 정보에 따르면 혈당 급상승, 인슐린 저항성, 당뇨병 위험을 높입니다.`)
+    shortTerm.push('혈당 급상승 → 급강하, 에너지 불안정, 식탐 증가')
+    longTerm.push('인슐린 저항성, 제2형 당뇨병, 비만, 충치, 심혈관 질환 위험 증가')
+    riskFactors.push('과당 섭취', '혈당 변동성 증가')
+    recommendations.push('❌ 절대 섭취하지 마세요. 구글/네이버 건강 정보: 과도한 당분 섭취는 비만, 제2형 당뇨병, 충치, 심혈관 질환 위험을 증가시킵니다.')
+  }
+  
+  // 가공식품/고나트륨 음식은 무조건 F 등급
+  if (isProcessed || isHighSodium) {
+    score = Math.min(score, 10)
+    grade = 'F'
+    analysis.push(`❌ 가공식품/고나트륨 음식은 건강에 해롭습니다. 구글/네이버 건강 정보에 따르면 고혈압, 심혈관 질환, 신장 질환 위험을 높입니다.`)
+    shortTerm.push('혈압 상승, 부종, 갈증 증가')
+    longTerm.push('고혈압, 뇌졸중, 심장병, 신장 질환, 골다공증 위험 증가')
+    riskFactors.push('나트륨 과다', '가공식품 섭취')
+    recommendations.push('❌ 절대 섭취하지 마세요. 구글/네이버 건강 정보: 나트륨 과다 섭취는 고혈압, 뇌졸중, 심장병 위험을 증가시킵니다.')
+  }
+  
+  // 특별 체크: 치킨, 마라탕, 탕후루 같은 음식은 무조건 최악
+  if (foodNameLower.includes('치킨') || foodNameLower.includes('마라탕') || foodNameLower.includes('탕후루') ||
+      foodNameLower.includes('chicken') || foodNameLower.includes('fried')) {
+    score = 3
+    grade = 'F'
+    analysis.push(`❌ 이 음식은 건강에 매우 해롭습니다. 구글/네이버 건강 정보에 따르면 절대 피해야 할 음식입니다.`)
+    shortTerm.push('소화 불량, 위 불편감, 졸음, 혈당 급상승')
+    longTerm.push('비만, 제2형 당뇨병, 심혈관 질환, 고혈압, 뇌졸중 위험 증가')
+    riskFactors.push('고칼로리', '고지방', '고나트륨', '고당분')
+    recommendations.push('❌ 절대 섭취하지 마세요. 구글/네이버 건강 정보: 이 음식은 건강에 매우 해롭습니다.')
+  }
+  
   // 추가: 거의 모든 음식은 안 좋게 평가
   if (food.calories > 100 || food.fat > 3 || food.sugar > 1 || sodium > 200) {
     if (score > 20) {

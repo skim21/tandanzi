@@ -38,6 +38,12 @@ const categoryNutrition: Record<string, NutritionData> = {
   // 디저트/과자
   dessert: { foodName: '디저트', calories: 400, protein: 5, fat: 18, carbs: 52, fiber: 2, sugar: 35, sodium: 200 },
   
+  // 마라탕
+  maratang: { foodName: '마라탕', calories: 320, protein: 18, fat: 22, carbs: 15, fiber: 2, sugar: 3, sodium: 2000 },
+  
+  // 탕후루
+  tanghulu: { foodName: '탕후루', calories: 180, protein: 0.5, fat: 0.1, carbs: 45, fiber: 0.2, sugar: 40, sodium: 5 },
+  
   // 음료
   beverage: { foodName: '음료', calories: 40, protein: 0.5, fat: 0.1, carbs: 10, fiber: 0.2, sugar: 9, sodium: 10 },
   
@@ -61,10 +67,10 @@ const categoryKeywords: Record<string, string[]> = {
   seafood: ['생선', '참치', '연어', '고등어', '새우', '오징어', '문어', '게', '홍합', '조개', '전복', '회', '해물', '멸치', '꽃게'],
   noodle: ['면', '라면', '국수', '우동', '파스타', '스파게티', '짜장면', '짬뽕', '우동', '라멘'],
   rice: ['밥', '볶음밥', '비빔밥', '김밥', '주먹밥', '밥'],
-  stew: ['찌개', '탕', '국', '된장', '김치찌개', '부대찌개', '순두부', '설렁탕', '삼계탕', '갈비탕', '해물탕', '국물'],
+  stew: ['찌개', '탕', '국', '된장', '김치찌개', '부대찌개', '순두부', '설렁탕', '삼계탕', '갈비탕', '해물탕', '국물', '마라탕'],
   bread: ['빵', '토스트', '샌드위치', '햄버거', '버거', '도넛'],
   fastfood: ['패스트푸드', '햄버거', '피자', '치킨', '도넛', '치즈버거'],
-  dessert: ['디저트', '케이크', '초콜릿', '아이스크림', '도넛', '쿠키', '파이', '티라미수', '푸딩', '젤리'],
+  dessert: ['디저트', '케이크', '초콜릿', '탕후루', '사탕', '캔디', '젤리', '아이스크림', '도넛', '쿠키', '파이', '티라미수', '푸딩'],
   beverage: ['음료', '주스', '콜라', '사이다', '탄산', '차', '커피', '우유', '두유', '오렌지주스', '사과주스'],
   dairy: ['우유', '치즈', '요거트', '요구르트', '버터', '크림'],
   egg: ['계란', '달걀', '에그'],
@@ -87,6 +93,38 @@ export function detectFoodCategory(foodName: string): string | null {
 }
 
 export function estimateNutritionByCategory(foodName: string): NutritionData {
+  const normalized = foodName.toLowerCase().trim()
+  
+  // 마라탕 특별 체크
+  if (normalized.includes('마라탕') || normalized.includes('마라')) {
+    const base = categoryNutrition.maratang
+    return {
+      foodName: foodName,
+      calories: base.calories,
+      protein: base.protein,
+      fat: base.fat,
+      carbs: base.carbs,
+      fiber: base.fiber,
+      sugar: base.sugar,
+      sodium: base.sodium,
+    }
+  }
+  
+  // 탕후루 특별 체크
+  if (normalized.includes('탕후루') || normalized.includes('사탕') || normalized.includes('캔디')) {
+    const base = categoryNutrition.tanghulu
+    return {
+      foodName: foodName,
+      calories: base.calories,
+      protein: base.protein,
+      fat: base.fat,
+      carbs: base.carbs,
+      fiber: base.fiber,
+      sugar: base.sugar,
+      sodium: base.sodium,
+    }
+  }
+  
   const category = detectFoodCategory(foodName)
   
   if (category && categoryNutrition[category]) {
@@ -99,6 +137,7 @@ export function estimateNutritionByCategory(foodName: string): NutritionData {
       carbs: base.carbs,
       fiber: base.fiber,
       sugar: base.sugar,
+      sodium: base.sodium || 0,
     }
   }
   

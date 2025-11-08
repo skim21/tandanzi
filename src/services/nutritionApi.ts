@@ -99,6 +99,8 @@ const mockNutritionData: Record<string, NutritionData> = {
   '도넛': { foodName: '도넛', calories: 452, protein: 5.3, fat: 25, carbs: 51, fiber: 2.3, sugar: 23, sodium: 300 },
   '피자': { foodName: '피자 (1조각)', calories: 266, protein: 12, fat: 10, carbs: 33, fiber: 2.3, sugar: 3.6, sodium: 550 },
   '햄버거': { foodName: '햄버거', calories: 295, protein: 15, fat: 14, carbs: 28, fiber: 2.1, sugar: 5, sodium: 900 },
+  '탕후루': { foodName: '탕후루', calories: 180, protein: 0.5, fat: 0.1, carbs: 45, fiber: 0.2, sugar: 40, sodium: 5 },
+  '마라탕': { foodName: '마라탕', calories: 320, protein: 18, fat: 22, carbs: 15, fiber: 2, sugar: 3, sodium: 2000 },
   
   // 음료
   '커피': { foodName: '커피 (아메리카노)', calories: 2, protein: 0.3, fat: 0, carbs: 0.3, fiber: 0, sugar: 0, sodium: 5 },
