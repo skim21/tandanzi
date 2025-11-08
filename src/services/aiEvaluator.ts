@@ -65,149 +65,293 @@ export function evaluateMeal(
   
   const reasons: string[] = []
   const missingNutrients: string[] = []
-  let score = 100
-  let shouldEat = true
+  let score = 20  // 시작 점수: 20점 (거의 다 안 좋음)
+  let shouldEat = false  // 기본값: 안 먹는 게 좋음
+  let hasBadNutrients = false  // 나쁜 영양소 플래그
   
-  // === 엄격한 평가 기준 ===
+  // === 극도로 엄격한 평가 기준 (20점 시작, 거의 다 안 좋게 평가) ===
   
-  // 1. 시간대별 적합성 평가 (더 엄격하게)
+  // 1. 시간대별 적합성 평가 (극도로 엄격하게 - 대부분 안 좋게)
   const calorieRatio = food.calories / timeBasedLimit
-  if (calorieRatio > 2.0) {
-    score -= 35
+  if (calorieRatio > 1.2) {
+    score -= 30  // 즉시 10점 이하
+    hasBadNutrients = true
     shouldEat = false
-    reasons.push(`⚠️ 현재 시간(${mealTimeName})에는 ${timeBasedLimit}kcal 이내가 적당한데, ${food.calories}kcal는 너무 많습니다`)
-  } else if (calorieRatio > 1.5) {
+    reasons.push(`❌ 현재 시간(${mealTimeName})에는 ${timeBasedLimit}kcal 이내가 적당한데, ${food.calories}kcal는 매우 많습니다`)
+  } else if (calorieRatio > 1.1) {
     score -= 25
-    reasons.push(`⚠️ 현재 시간(${mealTimeName})에는 ${timeBasedLimit}kcal 이내가 적당합니다 (${food.calories}kcal)`)
-    if (calorieRatio > 1.8) {
-      shouldEat = false
-    }
-  } else if (calorieRatio > 1.2) {
-    score -= 10
-    reasons.push(`현재 시간대(${mealTimeName})에 다소 높은 칼로리입니다 (${food.calories}kcal)`)
-  } else if (calorieRatio <= 0.8) {
-    reasons.push(`✅ 현재 시간대(${mealTimeName})에 적합한 칼로리입니다`)
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 현재 시간(${mealTimeName})에는 ${timeBasedLimit}kcal 이내가 적당합니다 (${food.calories}kcal)`)
+  } else if (calorieRatio > 1.05) {
+    score -= 20
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 현재 시간대(${mealTimeName})에 높은 칼로리입니다 (${food.calories}kcal)`)
+  } else if (calorieRatio > 1.0) {
+    score -= 15
+    shouldEat = false
+    reasons.push(`⚠️ 현재 시간대(${mealTimeName})에 다소 높은 칼로리입니다 (${food.calories}kcal)`)
+  } else if (calorieRatio <= 0.9 && food.calories < 200) {
+    // 좋은 경우에도 보너스 거의 없음
+    score += 3  // 최소 보너스
+    reasons.push(`현재 시간대(${mealTimeName})에 적합한 칼로리입니다`)
+  } else {
+    // 그냥 평범한 경우도 패널티
+    score -= 5
+    reasons.push(`⚠️ 현재 시간대(${mealTimeName})에 평범한 칼로리입니다`)
   }
   
-  // 2. 하루 총 칼로리 평가 (더 엄격하게)
-  if (projectedTotal > DAILY_CALORIE_GOAL * 1.4) {
-    score -= 40
+  // 2. 하루 총 칼로리 평가 (극도로 엄격하게)
+  if (projectedTotal > DAILY_CALORIE_GOAL * 1.05) {
+    score -= 30  // 즉시 10점 이하
+    hasBadNutrients = true
     shouldEat = false
     reasons.push(`❌ 하루 권장 칼로리(${DAILY_CALORIE_GOAL}kcal)를 ${(projectedTotal - DAILY_CALORIE_GOAL).toFixed(0)}kcal 초과합니다`)
-  } else if (projectedTotal > DAILY_CALORIE_GOAL * 1.25) {
-    score -= 30
+  } else if (projectedTotal > DAILY_CALORIE_GOAL * 1.02) {
+    score -= 25
+    hasBadNutrients = true
     shouldEat = false
-    reasons.push(`⚠️ 하루 권장 칼로리를 ${(projectedTotal - DAILY_CALORIE_GOAL).toFixed(0)}kcal 초과합니다 (${projectedTotal.toFixed(0)}kcal)`)
-  } else if (projectedTotal > DAILY_CALORIE_GOAL * 1.1) {
+    reasons.push(`❌ 하루 권장 칼로리를 ${(projectedTotal - DAILY_CALORIE_GOAL).toFixed(0)}kcal 초과합니다 (${projectedTotal.toFixed(0)}kcal)`)
+  } else if (projectedTotal > DAILY_CALORIE_GOAL * 1.0) {
     score -= 20
-    reasons.push(`⚠️ 하루 권장 칼로리를 약간 초과합니다 (${projectedTotal.toFixed(0)}kcal)`)
-  } else if (todayCalories < DAILY_CALORIE_GOAL * 0.6 && food.calories < 400) {
-    reasons.push(`✅ 오늘 칼로리 섭취가 부족하므로 섭취를 권장합니다`)
+    shouldEat = false
+    reasons.push(`❌ 하루 권장 칼로리를 약간 초과합니다 (${projectedTotal.toFixed(0)}kcal)`)
+  } else if (projectedTotal > DAILY_CALORIE_GOAL * 0.98) {
+    score -= 10
+    shouldEat = false
+    reasons.push(`⚠️ 하루 권장 칼로리에 근접합니다 (${projectedTotal.toFixed(0)}kcal)`)
+  } else if (todayCalories < DAILY_CALORIE_GOAL * 0.2 && food.calories < 150 && food.fat < 5 && food.sugar < 3) {
+    // 정말 좋은 경우에만 최소 보너스
+    score += 2  // 최소 보너스
+    reasons.push(`오늘 칼로리 섭취가 매우 부족합니다`)
+  } else {
+    // 평범한 경우도 패널티
+    score -= 5
+    reasons.push(`⚠️ 칼로리 섭취를 주의하세요`)
   }
   
-  // 3. 어제 대비 평가 (더 엄격하게)
-  if (yesterdayCalories > DAILY_CALORIE_GOAL * 1.3) {
-    if (food.calories > 350) {
-      score -= 20
-      reasons.push(`⚠️ 어제 칼로리 섭취가 ${yesterdayCalories.toFixed(0)}kcal로 많았으니 오늘은 가벼운 식사(300kcal 이하)를 권장합니다`)
-      if (food.calories > 450) {
-        shouldEat = false
-      }
+  // 3. 어제 대비 평가 (극도로 엄격하게)
+  if (yesterdayCalories > DAILY_CALORIE_GOAL * 1.2) {
+    if (food.calories > 300) {
+      score -= 35  // 패널티 증가
+      shouldEat = false
+      reasons.push(`❌ 어제 칼로리 섭취가 ${yesterdayCalories.toFixed(0)}kcal로 많았으니 오늘은 가벼운 식사(200kcal 이하)를 권장합니다`)
+    } else if (food.calories > 250) {
+      score -= 25
+      reasons.push(`⚠️ 어제 칼로리 섭취가 많았으니 가벼운 식사를 권장합니다`)
     }
-  } else if (yesterdayCalories > DAILY_CALORIE_GOAL * 1.2) {
-    if (food.calories > 500) {
-      score -= 15
-      reasons.push(`어제 칼로리 섭취가 많았으니 오늘은 적당한 식사를 권장합니다`)
+  } else if (yesterdayCalories > DAILY_CALORIE_GOAL * 1.1) {
+    if (food.calories > 400) {
+      score -= 30  // 패널티 증가
+      shouldEat = false
+      reasons.push(`⚠️ 어제 칼로리 섭취가 많았으니 오늘은 적당한 식사를 권장합니다`)
     }
   }
   
-  // 4. 영양소 균형 평가 (더 엄격하게)
+  // 4. 영양소 균형 평가 (극도로 엄격하게 - 대부분 안 좋게)
   // 지방 평가
   const fatPercentage = (food.fat * 9) / food.calories * 100
-  if (fatPercentage > 60) {
-    score -= 25
+  if (fatPercentage > 30) {
+    score -= 30  // 즉시 10점 이하
+    hasBadNutrients = true
     shouldEat = false
-    reasons.push(`❌ 지방 함량이 매우 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%)`)
-  } else if (fatPercentage > 50) {
+    reasons.push(`❌ 지방 함량이 매우 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%) - 건강에 매우 안 좋습니다`)
+  } else if (fatPercentage > 20) {
+    score -= 25
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 지방 함량이 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%) - 건강에 좋지 않습니다`)
+  } else if (fatPercentage > 15) {
     score -= 20
-    reasons.push(`⚠️ 지방 함량이 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%)`)
-  } else if (fatPercentage > 40) {
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 지방 함량이 다소 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%)`)
+  } else if (fatPercentage > 10) {
+    score -= 15
+    shouldEat = false
+    reasons.push(`⚠️ 지방 함량이 높은 편입니다 (${food.fat}g)`)
+  } else if (fatPercentage > 5) {
     score -= 10
-    reasons.push(`지방 함량이 다소 높습니다 (${food.fat}g)`)
+    reasons.push(`⚠️ 지방 함량이 다소 높습니다 (${food.fat}g)`)
+  } else {
+    // 지방이 적어도 패널티는 유지
+    score -= 3
   }
   
-  // 당분 평가
-  if (food.sugar > 30) {
+  // 당분 평가 (시간대 무관하게 엄격하게)
+  if (food.sugar > 10) {
+    score -= 30  // 즉시 10점 이하
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 당분 함량이 매우 높습니다 (${food.sugar}g) - 건강에 매우 안 좋습니다`)
+  } else if (food.sugar > 6) {
     score -= 25
-    reasons.push(`❌ 당분 함량이 매우 높습니다 (${food.sugar}g)`)
-    if (food.sugar > 40) {
-      shouldEat = false
-    }
-  } else if (food.sugar > 20) {
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 당분 함량이 높습니다 (${food.sugar}g) - 건강에 좋지 않습니다`)
+  } else if (food.sugar > 3) {
+    score -= 20
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 당분 함량이 다소 높습니다 (${food.sugar}g)`)
+  } else if (food.sugar > 1) {
     score -= 15
-    reasons.push(`⚠️ 당분 함량이 높습니다 (${food.sugar}g)`)
-  } else if (food.sugar > 15) {
+    shouldEat = false
+    reasons.push(`⚠️ 당분 함량이 있는 편입니다 (${food.sugar}g)`)
+  } else if (food.sugar > 0) {
     score -= 8
-    reasons.push(`당분 함량이 다소 높습니다 (${food.sugar}g)`)
+    reasons.push(`⚠️ 당분 함량이 약간 있습니다 (${food.sugar}g)`)
   }
   
   // 단백질 평가 (부족한 영양소 체크)
   const proteinRatio = (food.protein * 4) / food.calories * 100
-  if (proteinRatio < 10 && food.calories > 150) {
+  if (proteinRatio < 15 && food.calories > 150) {
+    score -= 25  // 패널티
+    missingNutrients.push('단백질')
+    reasons.push(`❌ 단백질 함량이 낮습니다 (${food.protein}g) - 근육 형성과 회복에 중요합니다`)
+  } else if (proteinRatio < 12 && food.calories > 150) {
     score -= 15
     missingNutrients.push('단백질')
-    reasons.push(`⚠️ 단백질 함량이 낮습니다 (${food.protein}g) - 근육 형성과 회복에 중요합니다`)
+    reasons.push(`⚠️ 단백질 함량이 부족합니다 (${food.protein}g)`)
+  } else if (proteinRatio > 20 && food.calories < 300) {
+    // 좋은 경우에도 보너스 최소화
+    score += 5  // 최소 보너스
+    reasons.push(`단백질이 풍부합니다 (${food.protein}g)`)
   }
   
   // 섬유질 평가 (부족한 영양소 체크)
-  if (food.fiber < 1 && food.calories > 200) {
-    score -= 10
+  if (food.fiber < 3 && food.calories > 200) {
+    score -= 20  // 패널티
     missingNutrients.push('섬유질')
-    reasons.push(`⚠️ 섬유질이 부족합니다 (${food.fiber}g) - 소화와 포만감에 중요합니다`)
-  } else if (food.fiber > 3) {
-    reasons.push(`✅ 섬유질이 풍부하여 건강에 좋습니다 (${food.fiber}g)`)
+    reasons.push(`❌ 섬유질이 부족합니다 (${food.fiber}g) - 소화와 포만감에 중요합니다`)
+  } else if (food.fiber < 2 && food.calories > 200) {
+    score -= 15
+    missingNutrients.push('섬유질')
+    reasons.push(`⚠️ 섬유질이 부족합니다 (${food.fiber}g)`)
+  } else if (food.fiber > 4) {
+    // 좋은 경우에도 보너스 최소화 (그냥 그럭저럭)
+    score += 5  // 최소 보너스
+    reasons.push(`섬유질이 풍부합니다 (${food.fiber}g)`)
   }
   
-  // 5. 늦은 시간 야식 경고 (더 엄격하게)
+  // 5. 늦은 시간 야식 경고 (극도로 엄격하게)
   if (currentHour >= 22 || currentHour < 6) {
-    if (food.calories > 250) {
-      score -= 30
+    if (food.calories > 200) {
+      score -= 50  // 매우 큰 패널티
       shouldEat = false
       reasons.push(`❌ 늦은 시간(야식)에 고칼로리 식품(${food.calories}kcal)은 소화에 부담이 되고 수면의 질을 떨어뜨립니다`)
-    } else if (food.calories > 150) {
-      score -= 15
+    } else if (food.calories > 120) {
+      score -= 35  // 큰 패널티
+      shouldEat = false
+      reasons.push(`❌ 늦은 시간에 ${food.calories}kcal는 많습니다`)
+    } else if (food.calories > 80) {
+      score -= 20
       reasons.push(`⚠️ 늦은 시간에 ${food.calories}kcal는 다소 많을 수 있습니다`)
     }
     
-    if (food.fat > 10) {
-      score -= 10
-      reasons.push(`늦은 시간에 고지방 식품은 소화를 느리게 합니다`)
+    if (food.fat > 8) {
+      score -= 25  // 패널티 증가
+      reasons.push(`❌ 늦은 시간에 고지방 식품은 소화를 느리게 합니다`)
+    } else if (food.fat > 5) {
+      score -= 15
+      reasons.push(`⚠️ 늦은 시간에 지방 함량이 높습니다`)
     }
   }
   
-  // 6. 점수 정규화 (0-100)
-  score = Math.max(0, Math.min(100, score))
+  // 5. 나트륨 평가 추가 (나쁜 영양소 - 대부분 안 좋게)
+  const sodium = food.sodium || 0
+  const DAILY_SODIUM_LIMIT = 2000 // mg (WHO 권장 기준)
   
-  // 7. 최종 권장 여부 결정 (더 엄격하게)
-  if (score < 60) {
+  if (sodium > 800) {
+    score -= 30  // 즉시 10점 이하
+    hasBadNutrients = true
     shouldEat = false
-  } else if (score < 70) {
-    shouldEat = false // 70점 미만은 권장하지 않음
+    reasons.push(`❌ 나트륨 함량이 매우 높습니다 (${sodium}mg) - 고혈압, 심혈관 질환 위험 증가`)
+  } else if (sodium > 500) {
+    score -= 25
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 나트륨 함량이 높습니다 (${sodium}mg) - 건강에 좋지 않습니다`)
+  } else if (sodium > 300) {
+    score -= 20
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 나트륨 함량이 다소 높습니다 (${sodium}mg)`)
+  } else if (sodium > 150) {
+    score -= 15
+    shouldEat = false
+    reasons.push(`⚠️ 나트륨 함량이 있는 편입니다 (${sodium}mg)`)
+  } else if (sodium > 50) {
+    score -= 10
+    reasons.push(`⚠️ 나트륨 함량이 약간 있습니다 (${sodium}mg)`)
+  } else if (sodium > 0) {
+    score -= 5
   }
   
-  // 메시지 생성 (더 엄격한 기준)
+  // 6. 가공식품/패스트푸드 특별 체크 (치킨, 피자, 햄버거, 과자 등 - 대부분 안 좋게)
+  const isProcessedFood = 
+    (food.calories > 200 && (food.fat > 8 || food.sugar > 4)) ||
+    food.calories > 250 ||
+    sodium > 400 ||
+    food.sugar > 6 ||
+    fatPercentage > 15
+  
+  if (isProcessedFood) {
+    score -= 25
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 가공식품/패스트푸드 특성상 건강에 매우 좋지 않습니다`)
+  }
+  
+  // 추가: 칼로리가 높으면 무조건 나쁨
+  if (food.calories > 250) {
+    score -= 15
+    hasBadNutrients = true
+    shouldEat = false
+    reasons.push(`❌ 칼로리가 높아 건강에 좋지 않습니다`)
+  }
+  
+  // 7. 점수 정규화 (0-100)
+  score = Math.max(0, Math.min(100, score))
+  
+  // 8. 최종 점수 조정: 거의 모든 음식은 안 좋게 평가
+  // 나쁜 영양소가 있으면 무조건 15점 이하로 강제
+  if (hasBadNutrients && score > 15) {
+    score = 15  // 나쁜 영양소 있으면 최대 15점
+    shouldEat = false
+  }
+  
+  // 추가: 거의 모든 음식은 안 좋게 평가
+  if (food.calories > 100 || food.fat > 3 || food.sugar > 1 || sodium > 100) {
+    if (score > 20) {
+      score = 20  // 거의 모든 음식은 20점 이하
+    }
+    shouldEat = false
+  }
+  
+  // 추가: 칼로리가 있으면 무조건 나쁨
+  if (food.calories > 50) {
+    if (score > 18) {
+      score = 18
+    }
+    shouldEat = false
+  }
+  
+  // 9. 최종 권장 여부 결정 (극도로 엄격하게)
+  // 거의 모든 음식은 안 좋게
+  shouldEat = false  // 무조건 권장하지 않음
+  
+  // 메시지 생성 (극도로 엄격한 기준 - 거의 다 안 좋게)
   let message = ''
-  if (shouldEat && score >= 85) {
-    message = `✅ 지금 먹기에 매우 적절합니다!`
-  } else if (shouldEat && score >= 75) {
-    message = `✅ 지금 먹기에 적절합니다`
-  } else if (score >= 65 && score < 75) {
-    message = `⚠️ 먹을 수 있지만 주의가 필요합니다`
-    shouldEat = false // 75점 미만은 권장하지 않음
-  } else if (score >= 50) {
-    message = `❌ 지금 먹기에는 부적절합니다`
+  if (score >= 25) {
+    message = `❌ 먹기에는 부적절합니다`
+  } else if (score >= 15) {
+    message = `❌ 건강에 좋지 않습니다`
+  } else if (score >= 10) {
+    message = `❌ 매우 부적절합니다`
   } else {
-    message = `❌ 지금 먹지 않는 것이 좋습니다`
+    message = `❌ 절대 먹지 마세요`
   }
   
   // 대안 제시

@@ -43,28 +43,32 @@ export function getMedicalAssessment(
   const recommendations: string[] = []
   const riskFactors: string[] = []
   
-  let grade: 'A' | 'B' | 'C' | 'D' | 'F' = 'A'
-  let score = 100
+  let grade: 'A' | 'B' | 'C' | 'D' | 'F' = 'F'  // 기본값: F (거의 다 안 좋음)
+  let score = 30  // 시작 점수: 30점 (거의 다 안 좋음)
   
   // === 1. 칼로리 평가 ===
   const calorieExcess = projectedTotal - 2000
-  if (calorieExcess > 800) {
-    score -= 40
+  if (calorieExcess > 200) {
+    score -= 20
     grade = 'F'
-    analysis.push(`하루 권장 칼로리(2000kcal)를 ${calorieExcess.toFixed(0)}kcal 초과합니다. 이는 체중 증가로 이어질 수 있습니다.`)
+    analysis.push(`❌ 하루 권장 칼로리(2000kcal)를 ${calorieExcess.toFixed(0)}kcal 초과합니다. 이는 체중 증가로 이어질 수 있습니다.`)
     shortTerm.push('소화불량, 위 불편감, 졸음, 혈당 급상승 가능')
     longTerm.push('비만, 제2형 당뇨병, 심혈관 질환 위험 증가')
     riskFactors.push('고칼로리 과다 섭취')
-  } else if (calorieExcess > 400) {
-    score -= 30
-    grade = grade === 'A' ? 'C' : grade
-    analysis.push(`하루 권장 칼로리를 ${calorieExcess.toFixed(0)}kcal 초과합니다.`)
+  } else if (calorieExcess > 100) {
+    score -= 15
+    grade = 'F'
+    analysis.push(`❌ 하루 권장 칼로리를 ${calorieExcess.toFixed(0)}kcal 초과합니다.`)
     longTerm.push('장기적으로 체중 증가 위험')
     riskFactors.push('칼로리 과다 섭취')
-  } else if (calorieExcess > 200) {
-    score -= 15
-    if (grade === 'A') grade = 'B'
-    analysis.push(`하루 권장 칼로리를 ${calorieExcess.toFixed(0)}kcal 초과합니다.`)
+  } else if (calorieExcess > 0) {
+    score -= 10
+    grade = 'D'
+    analysis.push(`❌ 하루 권장 칼로리를 ${calorieExcess.toFixed(0)}kcal 초과합니다.`)
+  } else if (projectedTotal > 1900) {
+    score -= 5
+    grade = 'D'
+    analysis.push(`⚠️ 하루 권장 칼로리에 근접합니다.`)
   }
   
   // === 2. 시간대별 평가 ===
@@ -77,19 +81,23 @@ export function getMedicalAssessment(
   }
   
   const timeLimit = getTimeLimit(currentHour)
-  if (food.calories > timeLimit.limit * 2) {
-    score -= 35
-    if (grade === 'A') grade = 'D'
-    analysis.push(`${timeLimit.name} 시간대에는 ${timeLimit.limit}kcal 이내가 적절한데, ${food.calories}kcal는 과도합니다.`)
+  if (food.calories > timeLimit.limit * 1.2) {
+    score -= 20
+    grade = 'F'
+    analysis.push(`❌ ${timeLimit.name} 시간대에는 ${timeLimit.limit}kcal 이내가 적절한데, ${food.calories}kcal는 과도합니다.`)
     shortTerm.push('소화 부담, 졸음, 집중력 저하')
     if (currentHour >= 22 || currentHour < 6) {
       longTerm.push('수면 장애, 생체리듬 교란')
       riskFactors.push('야식 습관')
     }
-  } else if (food.calories > timeLimit.limit * 1.5) {
-    score -= 20
-    if (grade === 'A') grade = 'B'
-    analysis.push(`${timeLimit.name} 시간대에 ${food.calories}kcal는 다소 높습니다.`)
+  } else if (food.calories > timeLimit.limit * 1.05) {
+    score -= 15
+    grade = grade === 'F' ? 'F' : 'D'
+    analysis.push(`❌ ${timeLimit.name} 시간대에 ${food.calories}kcal는 다소 높습니다.`)
+  } else if (food.calories > timeLimit.limit) {
+    score -= 10
+    grade = grade === 'F' ? 'F' : 'D'
+    analysis.push(`⚠️ ${timeLimit.name} 시간대에 ${food.calories}kcal는 높습니다.`)
   }
   
   // === 3. 영양소 분석 ===
@@ -98,19 +106,27 @@ export function getMedicalAssessment(
   const fatPercentage = (food.fat * 9) / food.calories * 100
   const saturatedFatEstimate = food.fat * 0.4 // 추정 (일반적으로 총 지방의 40%)
   
-  if (fatPercentage > 60) {
-    score -= 30
-    if (grade === 'A' || grade === 'B') grade = 'D'
-    analysis.push(`지방 함량이 매우 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%). 포화지방 추정치: ${saturatedFatEstimate.toFixed(1)}g`)
+  if (fatPercentage > 25) {
+    score -= 20
+    grade = 'F'
+    analysis.push(`❌ 지방 함량이 매우 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%). 포화지방 추정치: ${saturatedFatEstimate.toFixed(1)}g`)
     shortTerm.push('소화 지연, 무기력감, 트리글리세리드 급상승')
     longTerm.push('혈중 콜레스테롤 증가, 동맥경화, 심혈관 질환 위험 증가')
     riskFactors.push('고지방 식이')
-    recommendations.push('가공식품과 튀긴 음식 섭취를 줄이고, 견과류나 아보카도 같은 불포화지방 섭취 권장')
-  } else if (fatPercentage > 50) {
-    score -= 20
-    if (grade === 'A') grade = 'C'
-    analysis.push(`지방 함량이 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%)`)
+    recommendations.push('❌ 이 음식은 섭취하지 마세요. 가공식품과 튀긴 음식은 건강에 매우 해롭습니다.')
+  } else if (fatPercentage > 15) {
+    score -= 15
+    grade = 'F'
+    analysis.push(`❌ 지방 함량이 높습니다 (${food.fat}g, 칼로리의 ${fatPercentage.toFixed(0)}%)`)
     longTerm.push('지속적 섭취 시 심혈관 건강 악화 가능')
+    riskFactors.push('고지방 식이')
+  } else if (fatPercentage > 10) {
+    score -= 10
+    grade = grade === 'F' ? 'F' : 'D'
+    analysis.push(`⚠️ 지방 함량이 다소 높습니다 (${food.fat}g)`)
+  } else if (food.fat > 3) {
+    score -= 5
+    grade = grade === 'F' ? 'F' : 'D'
   }
   
   // 포화지방 평가 (WHO 권장: 하루 총 칼로리의 10% 이하)
@@ -123,25 +139,28 @@ export function getMedicalAssessment(
   // 당분 분석
   const sugarPercentage = (food.sugar * 4) / food.calories * 100
   
-  if (food.sugar > 40) {
-    score -= 35
-    if (grade === 'A' || grade === 'B') grade = 'D'
-    analysis.push(`당분 함량이 매우 높습니다 (${food.sugar}g). 이는 WHO 일일 권장량의 ${((food.sugar / DAILY_SUGAR_LIMIT) * 100).toFixed(0)}%에 해당합니다.`)
+  if (food.sugar > 10) {
+    score -= 20
+    grade = 'F'
+    analysis.push(`❌ 당분 함량이 매우 높습니다 (${food.sugar}g). 이는 WHO 일일 권장량의 ${((food.sugar / DAILY_SUGAR_LIMIT) * 100).toFixed(0)}%에 해당합니다.`)
     shortTerm.push('혈당 급상승 → 급강하, 에너지 불안정, 식탐 증가')
     longTerm.push('인슐린 저항성, 제2형 당뇨병, 비만, 충치 위험 증가')
     riskFactors.push('과당 섭취')
-    recommendations.push('가공당이 많은 음식보다 천연 당분(과일 등)을 선택하세요')
-  } else if (food.sugar > 25) {
-    score -= 25
-    if (grade === 'A') grade = 'C'
-    analysis.push(`당분 함량이 높습니다 (${food.sugar}g, 칼로리의 ${sugarPercentage.toFixed(0)}%)`)
+    recommendations.push('❌ 이 음식은 섭취하지 마세요. 당분이 너무 많아 건강에 매우 해롭습니다.')
+  } else if (food.sugar > 5) {
+    score -= 15
+    grade = 'F'
+    analysis.push(`❌ 당분 함량이 높습니다 (${food.sugar}g, 칼로리의 ${sugarPercentage.toFixed(0)}%)`)
     shortTerm.push('혈당 변동성 증가')
     longTerm.push('당뇨병 위험 증가')
     riskFactors.push('당분 과다 섭취')
-  } else if (food.sugar > 15) {
-    score -= 15
-    if (grade === 'A') grade = 'B'
-    analysis.push(`당분 함량이 다소 높습니다 (${food.sugar}g)`)
+  } else if (food.sugar > 2) {
+    score -= 10
+    grade = grade === 'F' ? 'F' : 'D'
+    analysis.push(`⚠️ 당분 함량이 다소 높습니다 (${food.sugar}g)`)
+  } else if (food.sugar > 0) {
+    score -= 5
+    grade = grade === 'F' ? 'F' : 'D'
   }
   
   // 단백질 평가
@@ -199,12 +218,42 @@ export function getMedicalAssessment(
     recommendations.push('오늘 당분 섭취가 권장 기준을 초과했습니다. 내일은 당분 함량이 낮은 음식을 선택하세요')
   }
   
+  // 추가: 나트륨 평가
+  const sodium = food.sodium || 0
+  if (sodium > 800) {
+    score -= 20
+    grade = 'F'
+    analysis.push(`❌ 나트륨 함량이 매우 높습니다 (${sodium}mg) - 고혈압, 심혈관 질환 위험 증가`)
+    riskFactors.push('나트륨 과다')
+    recommendations.push('❌ 이 음식은 섭취하지 마세요. 나트륨이 너무 많아 건강에 매우 해롭습니다.')
+  } else if (sodium > 500) {
+    score -= 15
+    grade = 'F'
+    analysis.push(`❌ 나트륨 함량이 높습니다 (${sodium}mg)`)
+    riskFactors.push('나트륨 과다')
+  } else if (sodium > 300) {
+    score -= 10
+    grade = grade === 'F' ? 'F' : 'D'
+    analysis.push(`⚠️ 나트륨 함량이 다소 높습니다 (${sodium}mg)`)
+  } else if (sodium > 100) {
+    score -= 5
+    grade = grade === 'F' ? 'F' : 'D'
+  }
+  
+  // 추가: 거의 모든 음식은 안 좋게 평가
+  if (food.calories > 100 || food.fat > 3 || food.sugar > 1 || sodium > 200) {
+    if (score > 20) {
+      score = 20
+    }
+    grade = 'F'
+  }
+  
   // === 최종 등급 결정 ===
-  if (score < 40) grade = 'F'
-  else if (score < 55) grade = 'D'
-  else if (score < 70) grade = 'C'
-  else if (score < 85) grade = 'B'
-  else grade = 'A'
+  if (score < 15) grade = 'F'
+  else if (score < 25) grade = 'F'
+  else if (score < 40) grade = 'D'
+  else if (score < 60) grade = 'D'
+  else grade = 'D'  // 거의 다 D 이하
   
   // === 종합 평가 요약 ===
   let summary = ''
@@ -217,7 +266,7 @@ export function getMedicalAssessment(
   } else if (grade === 'D') {
     summary = `❌ 이 음식은 영양소 불균형이나 과도한 칼로리로 건강에 부정적 영향을 줄 수 있습니다. 섭취를 자제하시기 바랍니다.`
   } else {
-    summary = `❌ 이 음식은 현재 건강한 식단에 매우 부적합합니다. 고칼로리, 고지방, 고당분으로 인해 만성 질환 위험을 높일 수 있습니다. 섭취를 피하시기 바랍니다.`
+    summary = `❌ 이 음식은 현재 건강한 식단에 매우 부적합합니다. 고칼로리, 고지방, 고당분, 고나트륨으로 인해 만성 질환 위험을 높일 수 있습니다. 절대 섭취하지 마세요.`
   }
   
   // 기본 권장사항 추가

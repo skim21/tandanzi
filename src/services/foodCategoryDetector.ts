@@ -3,52 +3,52 @@ import { NutritionData } from './nutritionApi'
 // 카테고리별 평균 영양소 (100g 기준)
 const categoryNutrition: Record<string, NutritionData> = {
   // 과일류
-  fruit: { foodName: '과일류', calories: 60, protein: 0.8, fat: 0.3, carbs: 15, fiber: 2.5, sugar: 12 },
+  fruit: { foodName: '과일류', calories: 60, protein: 0.8, fat: 0.3, carbs: 15, fiber: 2.5, sugar: 12, sodium: 1 },
   
   // 채소류
-  vegetable: { foodName: '채소류', calories: 25, protein: 2, fat: 0.2, carbs: 5, fiber: 2.5, sugar: 3 },
+  vegetable: { foodName: '채소류', calories: 25, protein: 2, fat: 0.2, carbs: 5, fiber: 2.5, sugar: 3, sodium: 5 },
   
   // 육류 (튀김/고칼로리)
-  friedMeat: { foodName: '튀긴 육류', calories: 350, protein: 20, fat: 25, carbs: 15, fiber: 0.5, sugar: 2 },
+  friedMeat: { foodName: '튀긴 육류', calories: 350, protein: 20, fat: 25, carbs: 15, fiber: 0.5, sugar: 2, sodium: 800 },
   
   // 육류 (일반)
-  meat: { foodName: '육류', calories: 250, protein: 25, fat: 15, carbs: 2, fiber: 0, sugar: 1 },
+  meat: { foodName: '육류', calories: 250, protein: 25, fat: 15, carbs: 2, fiber: 0, sugar: 1, sodium: 70 },
   
   // 닭고기
-  chicken: { foodName: '닭고기', calories: 165, protein: 31, fat: 3.6, carbs: 0, fiber: 0, sugar: 0 },
+  chicken: { foodName: '닭고기', calories: 165, protein: 31, fat: 3.6, carbs: 0, fiber: 0, sugar: 0, sodium: 80 },
   
   // 해산물
-  seafood: { foodName: '해산물', calories: 150, protein: 20, fat: 5, carbs: 2, fiber: 0, sugar: 1 },
+  seafood: { foodName: '해산물', calories: 150, protein: 20, fat: 5, carbs: 2, fiber: 0, sugar: 1, sodium: 200 },
   
   // 면류
-  noodle: { foodName: '면류', calories: 140, protein: 4.5, fat: 0.8, carbs: 28, fiber: 1.5, sugar: 1 },
+  noodle: { foodName: '면류', calories: 140, protein: 4.5, fat: 0.8, carbs: 28, fiber: 1.5, sugar: 1, sodium: 1200 },
   
   // 밥류
-  rice: { foodName: '밥류', calories: 130, protein: 2.7, fat: 0.3, carbs: 28, fiber: 0.4, sugar: 0.1 },
+  rice: { foodName: '밥류', calories: 130, protein: 2.7, fat: 0.3, carbs: 28, fiber: 0.4, sugar: 0.1, sodium: 5 },
   
   // 찌개/탕류
-  stew: { foodName: '찌개/탕류', calories: 90, protein: 6, fat: 3.5, carbs: 8, fiber: 1.2, sugar: 2 },
+  stew: { foodName: '찌개/탕류', calories: 90, protein: 6, fat: 3.5, carbs: 8, fiber: 1.2, sugar: 2, sodium: 900 },
   
   // 빵류
-  bread: { foodName: '빵류', calories: 265, protein: 9, fat: 3.2, carbs: 49, fiber: 2.7, sugar: 5 },
+  bread: { foodName: '빵류', calories: 265, protein: 9, fat: 3.2, carbs: 49, fiber: 2.7, sugar: 5, sodium: 500 },
   
   // 패스트푸드
-  fastfood: { foodName: '패스트푸드', calories: 295, protein: 14, fat: 13, carbs: 28, fiber: 2, sugar: 5 },
+  fastfood: { foodName: '패스트푸드', calories: 295, protein: 14, fat: 13, carbs: 28, fiber: 2, sugar: 5, sodium: 900 },
   
   // 디저트/과자
-  dessert: { foodName: '디저트', calories: 400, protein: 5, fat: 18, carbs: 52, fiber: 2, sugar: 35 },
+  dessert: { foodName: '디저트', calories: 400, protein: 5, fat: 18, carbs: 52, fiber: 2, sugar: 35, sodium: 200 },
   
   // 음료
-  beverage: { foodName: '음료', calories: 40, protein: 0.5, fat: 0.1, carbs: 10, fiber: 0.2, sugar: 9 },
+  beverage: { foodName: '음료', calories: 40, protein: 0.5, fat: 0.1, carbs: 10, fiber: 0.2, sugar: 9, sodium: 10 },
   
   // 유제품
-  dairy: { foodName: '유제품', calories: 60, protein: 3.2, fat: 3.3, carbs: 4.8, fiber: 0, sugar: 4.8 },
+  dairy: { foodName: '유제품', calories: 60, protein: 3.2, fat: 3.3, carbs: 4.8, fiber: 0, sugar: 4.8, sodium: 40 },
   
   // 계란류
-  egg: { foodName: '계란류', calories: 155, protein: 13, fat: 11, carbs: 1.1, fiber: 0, sugar: 1.1 },
+  egg: { foodName: '계란류', calories: 155, protein: 13, fat: 11, carbs: 1.1, fiber: 0, sugar: 1.1, sodium: 140 },
   
   // 견과류
-  nuts: { foodName: '견과류', calories: 600, protein: 15, fat: 50, carbs: 20, fiber: 7, sugar: 4 },
+  nuts: { foodName: '견과류', calories: 600, protein: 15, fat: 50, carbs: 20, fiber: 7, sugar: 4, sodium: 5 },
 }
 
 // 키워드 기반 카테고리 매칭
@@ -111,6 +111,7 @@ export function estimateNutritionByCategory(foodName: string): NutritionData {
     carbs: 25,
     fiber: 2,
     sugar: 5,
+    sodium: 400,
   }
 }
 

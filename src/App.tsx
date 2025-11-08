@@ -246,7 +246,7 @@ function App() {
           </div>
         )}
 
-        {/* Meal History Button */}
+        {/* Meal History Button - 항상 표시 */}
         <div className="max-w-4xl mx-auto mb-6">
           <button
             onClick={() => setShowHistory(!showHistory)}
@@ -254,6 +254,11 @@ function App() {
           >
             <History className="w-4 h-4" />
             <span>식사 기록 보기</span>
+            {(todayMeals.length > 0 || yesterdayMeals.length > 0) && (
+              <span className="ml-2 px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                {todayMeals.length + yesterdayMeals.length}
+              </span>
+            )}
           </button>
         </div>
 
